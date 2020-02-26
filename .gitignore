@@ -1,0 +1,16 @@
+.*.swp
+.*.swo
+
+build/*
+.gradle/*
+
+.idea/
+
+out/**/*.class
+out/*/*.java
+out/**/evaluation/test_*/
+out/**/evaluation/run_*/
+out/**/evaluation/core
+out/sql/evaluation/.venv/
+
+examples/

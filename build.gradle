@@ -1,0 +1,91 @@
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'antlr'
+apply plugin: 'checkstyle'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+mainClassName = "i2.act.StarSmithTranslate"
+
+ext.versions = [
+  antlr: "4.7",
+  junit: "4.12",
+  jackson: "2.9.7",
+]
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  antlr \
+    group: "org.antlr", \
+    name: "antlr4", \
+    version: versions.antlr
+
+  compile \
+    group: "com.fasterxml.jackson.core", \
+    name: "jackson-core", \
+    version: versions.jackson
+
+  compile \
+    group: "com.fasterxml.jackson.core", \
+    name: "jackson-databind", \
+    version: versions.jackson
+
+  testCompile \
+    group: "junit", \
+    name: "junit", \
+    version: versions.junit
+
+  testCompile \
+    group: "com.fasterxml.jackson.dataformat", \
+    name: "jackson-dataformat-yaml", \
+    version: versions.jackson
+}
+
+test {
+  testLogging {
+    exceptionFormat = "full"
+  }
+  testLogging.showStandardStreams = true
+
+  afterSuite { suite, result ->
+    if (suite.parent == null) {
+      def testSummary = " ${result.resultType} (${result.testCount} tests, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped) "
+      println("\n+" + ('-' * testSummary.length()) + "+\n" + '|' + testSummary + "|\n+" + ('-' * testSummary.length()) + "+\n")
+    }
+  }
+}
+
+generateGrammarSource {
+  arguments += ["-visitor", "-no-listener"]
+}
+
+jar {
+  manifest {
+    attributes "Main-Class": "$mainClassName"
+  }
+
+  from {
+    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  }
+}
+
+checkstyle {
+  toolVersion = "7.6.1"
+  configFile = new File(rootDir, "checkstyle/style.xml")
+  ignoreFailures = false
+}
+checkstyleMain.source="src/main"
+checkstyleTest.source="src/test"
+
+compileJava {
+  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+compileJava.finalizedBy(jar)
+
+compileTestJava {
+  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
