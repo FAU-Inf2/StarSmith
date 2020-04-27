@@ -4,6 +4,7 @@ import i2.act.fuzzer.Node;
 import i2.act.fuzzer.RandomFuzzer;
 import i2.act.fuzzer.Specification;
 import i2.act.fuzzer.SpecificationFactory;
+import i2.act.util.ArgumentSplitter;
 import i2.act.util.FileUtil;
 import i2.act.util.ProcessExecutor;
 import i2.act.util.options.*;
@@ -294,7 +295,11 @@ public final class FuzzerLoop {
       if (findBugsCommand != null) {
         assert (fileNameProgram != null);
 
-        if (ProcessExecutor.executeAndCheck(findBugsCommand, fileNameProgram)) {
+        final String[] findBugsCommandLine = ArgumentSplitter.splitArguments(findBugsCommand);
+        final String[] initialCheckCommandLine =
+            ArgumentSplitter.appendArgument(findBugsCommandLine, fileNameProgram);
+
+        if (ProcessExecutor.executeAndCheck(initialCheckCommandLine)) {
           // generated program does not trigger a bug
           System.out.println("[i] program does not trigger a bug => discard program");
           FileUtil.deleteFile(fileNameProgram);

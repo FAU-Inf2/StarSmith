@@ -1,6 +1,7 @@
 package i2.act.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class ArgumentSplitter {
@@ -83,6 +84,14 @@ public final class ArgumentSplitter {
 
   private static final boolean isWhitespaceCharacter(final char c) {
     return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+  }
+
+  public static final String[] appendArgument(final String[] previousArguments,
+      final String newArgument) {
+    final String[] newArguments = Arrays.copyOf(previousArguments, previousArguments.length + 1);
+    newArguments[newArguments.length - 1] = newArgument;
+
+    return newArguments;
   }
 
 }
