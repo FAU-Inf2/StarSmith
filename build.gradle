@@ -24,22 +24,22 @@ dependencies {
     name: "antlr4", \
     version: versions.antlr
 
-  compile \
+  implementation \
     group: "com.fasterxml.jackson.core", \
     name: "jackson-core", \
     version: versions.jackson
 
-  compile \
+  implementation \
     group: "com.fasterxml.jackson.core", \
     name: "jackson-databind", \
     version: versions.jackson
 
-  testCompile \
+  testImplementation \
     group: "junit", \
     name: "junit", \
     version: versions.junit
 
-  testCompile \
+  testImplementation \
     group: "com.fasterxml.jackson.dataformat", \
     name: "jackson-dataformat-yaml", \
     version: versions.jackson
@@ -69,7 +69,7 @@ jar {
   }
 
   from {
-    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
   }
 }
 
