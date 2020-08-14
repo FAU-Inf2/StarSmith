@@ -1,7 +1,8 @@
 # StarSmith
 
 This repository accompanies the research paper "P. Kreutzer, S. Kraus, M. Philippsen:
-Language-Agnostic Generation of Compilable Test Programs" published at ICST'20.
+Language-Agnostic Generation of Compilable Test Programs" published at ICST'20 ([link to
+publication](https://ieeexplore.ieee.org/document/9159098)).
 
 Please follow the instructions below to build and execute StarSmith. The implementation was tested
 on Debian 8 running OpenJDK 8 (and the instructions assume that you use a comparable system).
