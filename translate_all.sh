@@ -13,9 +13,9 @@ function print_step {
 
 compile_args=$@
 
-out_dirs=('c' 'lua' 'smt' 'sql' 'sql' 'paper_spec' 'paper_spec')
-specs=('c' 'lua' 'smt' 'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
-max_depths=('11' '13' '11' '40' '40' '11' '11')
+out_dirs=('c' 'lua' 'smt' 'smt' 'sql' 'sql' 'paper_spec' 'paper_spec')
+specs=('c' 'lua' 'smt' 'smt_fp' 'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
+max_depths=('11' '13' '11' '11' '40' '40' '11' '11')
 
 
 # == TRANSLATE RUNTIME CLASSES

@@ -33,6 +33,10 @@ print_step "SMT"
 "$(dirname "$0")/out/smt/run.sh" smt --seed 0 --count 10 \
   --out "$out_dir/smt/q_#{SEED}.smt2"
 
+print_step "SMT (FP)"
+"$(dirname "$0")/out/smt/run.sh" smt_fp --seed 0 --count 10 \
+  --out "$out_dir/smt_fp/q_#{SEED}.smt2"
+
 print_step "SQL (wrapper functions)"
 "$(dirname "$0")/out/sql/run.sh" sql_wrapper --seed 0 --count 10 \
   --out "$out_dir/sql_wrapper/query_#{SEED}.sql"
