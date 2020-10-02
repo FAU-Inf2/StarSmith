@@ -1454,8 +1454,7 @@ class Callee {
 
   syn symbol : Symbol;
 
-  callee (SymbolTable:visibleSymbols this.symbols_before
-      (Type:anyFunctionType this.expected_return_type) false) : Symbol {
+  callee (SymbolTable:visibleFunctions this.symbols_before this.expected_return_type) : Symbol {
     this.symbol = $;
   }
 

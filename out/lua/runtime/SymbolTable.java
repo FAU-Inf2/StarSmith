@@ -241,6 +241,27 @@ public final class SymbolTable {
     return visibleSymbols(symbolTable, null, false);
   }
 
+  public static final List<Symbol> visibleFunctions(final SymbolTable symbolTable,
+      final Type expectedReturnType) {
+    final List<Symbol> visibleSymbols = new LinkedList<>();
+
+    final LinkedHashMap<String, Symbol> flattened = flatten(symbolTable);
+    for (final Symbol symbol : flattened.values()) {
+      if (!(symbol.type instanceof Type.FunctionType)) {
+        continue;
+      }
+
+      final Type.FunctionType functionType = ((Type.FunctionType) symbol.type);
+      final Type returnType = functionType.returnType;
+
+      if (expectedReturnType == null || Type.assignable(returnType, expectedReturnType, false)) {
+        visibleSymbols.add(symbol);
+      }
+    }
+
+    return visibleSymbols;
+  }
+
   // -----------------------------------------------------------------------------------------------
 
   public final LinkedList<Map<String, Symbol>> scopes;
