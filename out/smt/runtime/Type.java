@@ -389,6 +389,101 @@ public abstract class Type {
 
   // ===============================================================================================
 
+  private static final class FloatingPointType extends Type {
+
+    public final int minExpBits;  // bits of the exponent
+    public final int maxExpBits;  // bits of the exponent
+    public final int minSigfBits; // bits of the significant
+    public final int maxSigfBits; // bits of the significant
+
+    public FloatingPointType(final int expBits, final int sigfBits) {
+      this(expBits, expBits, sigfBits, sigfBits);
+    }
+
+    public FloatingPointType(final int minExpBits, final int maxExpBits, final int minSigfBits,
+        final int maxSigfBits) {
+      this.minExpBits = minExpBits;
+      this.maxExpBits = maxExpBits;
+      this.minSigfBits = minSigfBits;
+      this.maxSigfBits = maxSigfBits;
+    }
+
+    @Override
+    public final boolean equals(final Object other) {
+      if (other instanceof FloatingPointType) {
+
+        final FloatingPointType otherFloatingPointType = (FloatingPointType) other;
+
+        return (this.minExpBits == otherFloatingPointType.minExpBits)
+            && (this.maxExpBits == otherFloatingPointType.maxExpBits)
+            && (this.minSigfBits == otherFloatingPointType.minSigfBits)
+            && (this.maxSigfBits == otherFloatingPointType.maxSigfBits);
+      }
+
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------
+
+  private static final FloatingPointType anyFloatingPoint = new FloatingPointType(-1, -1);
+
+  public static final Type anyFloatingPoint() {
+    return anyFloatingPoint;
+  }
+
+  public static final Type createFloatingPointSort(final int expBits, final int sigfBits) {
+    return new FloatingPointType(expBits, sigfBits);
+  }
+
+  public static final boolean isFloatingPointSort(final Type type) {
+    return (type instanceof FloatingPointType);
+  }
+
+  public static final int getMinExponentWidth(final Type type) {
+    return ((FloatingPointType) type).minExpBits;
+  }
+
+  public static final int getMaxExponentWidth(final Type type) {
+    return ((FloatingPointType) type).maxExpBits;
+  }
+
+  public static final int getMinSignificantWidth(final Type type) {
+    return ((FloatingPointType) type).minSigfBits;
+  }
+
+  public static final int getMaxSignificantWidth(final Type type) {
+    return ((FloatingPointType) type).maxSigfBits;
+  }
+
+  public static final int randomFPWidth(final Node node, final int lower, final int upper) {
+    if ((lower == -1) && (upper == -1)) {
+      return randomFPWidth(node, 2, 15);
+    }
+    if (lower == -1) {
+      return randomFPWidth(node, 2, upper);
+    }
+    if (upper == -1) {
+      return randomFPWidth(node, lower, lower + 15);
+    }
+
+    if (lower >= upper) {
+      return upper;
+    }
+
+    if (lower <= 1) {
+      throw new IllegalArgumentException("Width must be greater than 1");
+    }
+
+    rng.setSeed(node.id);
+
+    return lower + rng.nextInt(upper - lower + 1);
+  }
+
+
+
+  // ===============================================================================================
+
 
   public static final boolean equals(final Type first, final Type second) {
     return first.equals(second);
@@ -427,6 +522,34 @@ public abstract class Type {
 
       return ((targetMinWidth == -1) || (sourceMinWidth >= targetMinWidth))
           && ((targetMaxWidth == -1) || (sourceMaxWidth <= targetMaxWidth));
+    }
+
+    if (isFloatingPointSort(target)) {
+      if (!isFloatingPointSort(source)) {
+        return false;
+      }
+
+      if (anyFloatingPoint.equals(target)) {
+        return true;
+      }
+
+      final FloatingPointType targetFloatingPoint = (FloatingPointType) target;
+      final FloatingPointType sourceFloatingPoint = (FloatingPointType) source;
+
+      final int targetMinExp = targetFloatingPoint.minExpBits;
+      final int targetMaxExp = targetFloatingPoint.maxExpBits;
+      final int targetMinSigf = targetFloatingPoint.minSigfBits;
+      final int targetMaxSigf = targetFloatingPoint.maxSigfBits;
+
+      final int sourceMinExp = sourceFloatingPoint.minExpBits;
+      final int sourceMaxExp = sourceFloatingPoint.maxExpBits;
+      final int sourceMinSigf = sourceFloatingPoint.minSigfBits;
+      final int sourceMaxSigf = sourceFloatingPoint.maxSigfBits;
+
+      return ((targetMinExp == -1) || (sourceMinExp >= targetMinExp))
+          && ((targetMaxExp == -1) || (sourceMaxExp <= targetMaxExp))
+          && ((targetMinSigf == -1) || (sourceMinSigf >= targetMinSigf))
+          && ((targetMaxSigf == -1) || (sourceMaxSigf <= targetMaxSigf));
     }
 
     return (anySort.equals(target) && isPrimitiveSort(source)) || source.equals(target);
