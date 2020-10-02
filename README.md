@@ -8,6 +8,8 @@ contrast to other approaches, StarSmith uses an *attribute grammar* as input tha
 syntactic and the semantic rules of the respective programming language. This way, StarSmith is able
 to generate programs that are guaranteed to be compilable (or even free of undefined behavior).
 
+![StarSmith](graphics/languages.jpg)
+
 Please follow the instructions below to build and execute StarSmith. The implementation was tested
 on Debian 8 running OpenJDK 8 (and the instructions assume that you use a comparable system).
 
