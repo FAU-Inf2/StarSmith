@@ -33,6 +33,8 @@ public abstract class Type {
   private static final Type boolSort = new PrimitiveType("Bool");
   private static final Type intSort = new PrimitiveType("Int");
   private static final Type realSort = new PrimitiveType("Real");
+  private static final Type stringSort = new PrimitiveType("String");
+  private static final Type regLanSort = new PrimitiveType("RegLan");
 
   public static final Type unknownSort() {
     return unknownSort;
@@ -64,6 +66,22 @@ public abstract class Type {
 
   public static final boolean isRealSort(final Type sort) {
     return realSort.equals(sort); 
+  }
+
+  public static final Type stringSort() {
+    return stringSort;
+  }
+
+  public static final boolean isStringSort(final Type sort) {
+    return stringSort.equals(sort);
+  }
+
+  public static final Type regLanSort() {
+    return regLanSort;
+  }
+
+  public static final boolean isRegLanSort(final Type sort) {
+    return regLanSort.equals(sort);
   }
 
   public static final boolean isNumberSort(final Type sort) {
