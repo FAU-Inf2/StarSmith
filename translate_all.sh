@@ -13,11 +13,7 @@ function print_step {
 
 compile_args=$@
 
-out_dirs=('c' 'lua' 'smt' 'smt' 'smt' 'smt' 'sql' 'sql' 'paper_spec' 'paper_spec')
-specs=('c' 'lua' 'smt' 'smt_fp' 'smt_strings' 'smt_strings'  'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
-java_files=('c' 'lua' 'smt' 'smt_fp' 'smt_strings' 'smt_strings_sub' 'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
-max_depths=('11' '13' '11' '11' '13' '13' '40' '40' '11' '11')
-feature_options=('--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures' '--features check-sat,regex,str_lex,char,ite_regex' '--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures')
+out_dirs=('c' 'lua' 'smt' 'sql' 'paper_spec')
 
 
 # == TRANSLATE RUNTIME CLASSES
@@ -30,15 +26,27 @@ done
 
 # == TRANSLATE SPECIFICATIONS
 print_step "translate specifications"
-for i in ${!specs[@]} ; do
-  spec_file="specs/${specs[$i]}.ls"
-  out_dir="out/${out_dirs[$i]}"
-  java_file="$out_dir/${java_files[$i]}.java"
-  max_depth="${max_depths[$i]}"
-  feature_option="${feature_options[$i]}"
+
+translate_spec() { # <spec file> <out dir> <java file> <max depth> <feature option>
+  spec_file="specs/$1"
+  out_dir="out/$2"
+  java_file="$out_dir/$3"
+  max_depth="$4"
+  feature_option="$5"
 
   echo "- $spec_file => $java_file"
 
   ./translate_spec.sh --spec "$spec_file" --maxDepth "$max_depth" $feature_option --toJava "$java_file" $compile_args
   pushd "$out_dir" > /dev/null ; ./compile.sh "$(basename $java_file)" ; popd > /dev/null
-done
+}
+
+translate_spec "c.ls"              "c/"          "c.java"               11 --allFeatures
+translate_spec "lua.ls"            "lua/"        "lua.java"             13 --allFeatures
+translate_spec "smt.ls"            "smt/"        "smt.java"             11 --allFeatures
+translate_spec "smt_fp.ls"         "smt/"        "smt_fp.java"          11 --allFeatures
+translate_spec "smt_strings.ls"    "smt/"        "smt_strings.java"     13 --allFeatures
+translate_spec "smt_strings.ls"    "smt/"        "smt_strings_sub.java" 13 '--features check-sat,regex,str_lex,char,ite_regex'
+translate_spec "sql_wrapper.ls"    "sql/"        "sql_wrapper.java"     40 --allFeatures
+translate_spec "sql_arith.ls"      "sql/"        "sql_arith.java"       40 --allFeatures
+translate_spec "paper_spec.ls"     "paper_spec/" "paper_spec.java"      11 --allFeatures
+translate_spec "paper_spec_gen.ls" "paper_spec/" "paper_spec_gen.java"  11 --allFeatures
