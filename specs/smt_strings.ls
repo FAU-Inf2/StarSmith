@@ -1,4 +1,5 @@
 use BitVector;
+use SMTUtils;
 use Symbol;
 use SymbolTable;
 use Type;
@@ -19,8 +20,8 @@ class Script {
 @copy(stack_depth_before, symbols_before, stack_depth_after, symbols_after)
 class Commands {
 
-  inh stack_depth_before : int; 
-  syn stack_depth_after : int; 
+  inh stack_depth_before : int;
+  syn stack_depth_after : int;
 
   inh symbols_before : SymbolTable;
   syn symbols_after : SymbolTable;
@@ -46,8 +47,8 @@ class PushPopInt("[0-9]");
 @copy(symbols_before)
 class Command {
 
-  inh stack_depth_before : int; 
-  syn stack_depth_after : int; 
+  inh stack_depth_before : int;
+  syn stack_depth_after : int;
 
   inh symbols_before : SymbolTable;
   syn symbols_after : SymbolTable;
@@ -69,6 +70,7 @@ class Command {
   }
 
   @weight(1)
+  @feature("push_pop")
   push ("(push ${cnt : PushPopInt})") {
     this.allowed = true;
     this.stack_depth_after = (+ this.stack_depth_before (int cnt.str));
@@ -77,6 +79,7 @@ class Command {
   }
 
   @weight(3)
+  @feature("push_pop")
   pop ("(pop ${cnt : PushPopInt})") {
     this.allowed = (<= (int cnt.str) this.stack_depth_before);
     this.stack_depth_after = (- this.stack_depth_before (int cnt.str));
@@ -85,6 +88,7 @@ class Command {
   }
 
   @weight(2)
+  @feature("check-sat")
   check_sat ("(check-sat)") {
     this.allowed = true;
     this.stack_depth_after = this.stack_depth_before;
@@ -116,7 +120,6 @@ class FunDecl {
   grd possible;
 
   @weight(10)
-  # TODO should we include uninterpreted functions?
   declare_fun
       ("(declare-fun ${def : DefIdentifier} ${params : OptSortList} ${ret : Sort})") {
     this.possible = true;
@@ -291,16 +294,11 @@ class Sort {
     this.type = (Type:stringSort);
   }
 
-  @feature("regex")
-  regLan ("RegLan") {
-    this.type = (Type:regLanSort);
-  }
-
 }
 
 @copy(symbols_before, expected_type)
 class Expression {
-  
+
   inh symbols_before : SymbolTable;
   inh expected_type : Type;
 
@@ -359,7 +357,7 @@ class Expression {
 
 @copy(symbols_before, expected_type)
 class FunApp {
-  
+
   inh symbols_before : SymbolTable;
   inh expected_type : Type;
 
@@ -546,7 +544,6 @@ class StringExpression {
     s.expected_type = (Type:stringSort);
   }
 
-  # TODO restrict to singleton strings?
   @weight(1)
   to_code ("(str.to_code ${s : Expression})") {
     loc result_type = (Type:intSort);
@@ -600,33 +597,55 @@ class StringLiteral {
   char_seq ("\"${seq : CharacterSeq}\"") {}
 
   @weight(10)
-  singleton_str ("${singleton : SingletonStringLiteral}") {}
+  singleton_str ("${singleton : SingletonStringLiteral}") {
+    singleton.min_value = 0;
+  }
 
 }
-
-@count(10000)
-class HexNumber("#x[0-9a-fA-F]{1,4}");
-
-@count(100)
-class SingletonCharacterSeq("[a-zA-Z0-9+-=_{};]");
 
 class SingletonStringLiteral {
 
+  inh min_value : int;
+
+  grd possible;
+
+  syn value : int;
+
   @weight(1)
   @feature("char")
-  char ("(_ char ${h : HexNumber})") {}
+  char ("(_ char #{.char})") {
+    loc char = (SMTUtils:hexNumber this this.min_value);
 
-  # TODO does this count as a singleton string?
+    this.possible = (<= this.min_value 255);
+    this.value = (SMTUtils:getValue .char);
+  }
+
   @weight(1)
-  singleton_seq ("\"${seq : SingletonCharacterSeq}\"") {}
+  singleton_seq ("\"#{.seq}\"") {
+    loc seq = (SMTUtils:singletonCharacterSeq this this.min_value);
+
+    this.possible = (<= this.min_value 125);
+    this.value = (SMTUtils:getValue .seq);
+  }
 
 }
+
+@copy
+class SingletonStringLiteralHelper {
+
+  inh min_value : int;
+
+  syn value : int;
+
+  helper ("${v : SingletonStringLiteral}") {}
+
+}
+
 
 class BaseRegExOperator("none|all|allchar");
 class UnionInterOperator("union|inter");
 class KleeneOperator("*|+|opt");
 class RegExReplaceOperator("replace_re|replace_re_all");
-class CompDiffOperator("comp|diff");
 class Index("0|[1-9][0-9]{0,1}");
 
 @copy(symbols_before)
@@ -649,7 +668,7 @@ class RegExExpression {
     r.expected_type = (Type:regLanSort);
   }
 
-  base ("(re.${op : BaseRegExOperator})") {
+  base ("re.${op : BaseRegExOperator}") {
     loc result_type = (Type:regLanSort);
 
     this.type_matches = (Type:assignable .result_type this.expected_type);
@@ -698,7 +717,7 @@ class RegExExpression {
     s2.expected_type = (Type:stringSort);
   }
 
-  comp_diff ("(re.${op : CompDiffOperator} ${r : Expression})") {
+  comp ("(re.comp ${r : Expression})") {
     loc result_type = (Type:regLanSort);
 
     this.type_matches = (Type:assignable .result_type this.expected_type);
@@ -707,14 +726,28 @@ class RegExExpression {
     r.expected_type = (Type:regLanSort);
   }
 
-  range ("(re.range ${s1 : SingletonStringLiteral} ${s2 : SingletonStringLiteral})") {
+  diff ("(re.diff ${r : Expression} ${rest : ExpressionChain})") {
     loc result_type = (Type:regLanSort);
 
     this.type_matches = (Type:assignable .result_type this.expected_type);
     this.type = .result_type;
+
+    r.expected_type = (Type:regLanSort);
+    rest.min_length = 1;
+    rest.expected_type = (Type:regLanSort);
   }
 
-  power ("((re.^ ${i : Index}) ${r : Expression})") {
+  range ("(re.range ${s1 : SingletonStringLiteral} ${s2 : SingletonStringLiteralHelper})") {
+    loc result_type = (Type:regLanSort);
+
+    this.type_matches = (Type:assignable .result_type this.expected_type);
+    this.type = .result_type;
+
+    s1.min_value = 0;
+    s2.min_value = s1.value;
+  }
+
+  power ("((_ re.^ ${i : Index}) ${r : Expression})") {
     loc result_type = (Type:regLanSort);
 
     this.type_matches = (Type:assignable .result_type this.expected_type);
@@ -723,7 +756,7 @@ class RegExExpression {
     r.expected_type = (Type:regLanSort);
   }
 
-  loop ("((re.loop ${i1 : Index} ${i2 : Index}) ${r : Expression})") {
+  loop ("((_ re.loop ${i1 : Index} ${i2 : Index}) ${r : Expression})") {
     loc result_type = (Type:regLanSort);
 
     this.type_matches = (Type:assignable .result_type this.expected_type);
@@ -801,10 +834,27 @@ class Core_Expression {
   @weight(3)
   ite ("(ite ${c : Expression} ${t : IteHelper} ${e : Expression})") {
     this.type_matches =
-      (or
-        (Type:isPrimitiveSort this.expected_type)
-        (SymbolTable:containsVisibleSymbolOfType this.symbols_before this.expected_type)
+      (and
+        (not
+          (Type:isRegLanSort this.expected_type)
+        )
+        (or
+          (Type:isPrimitiveSort this.expected_type)
+          (SymbolTable:containsVisibleSymbolOfType this.symbols_before this.expected_type)
+        )
       );
+
+    c.expected_type = (Type:boolSort);
+    t.expected_type = this.expected_type;
+    e.expected_type = t.type;
+
+    this.type = t.type;
+  }
+
+  @weight(3)
+  @feature("ite_regex")
+  ite_regex ("(ite ${c : Expression} ${t : IteHelper} ${e : Expression})") {
+    this.type_matches = (Type:isRegLanSort this.expected_type);
 
     c.expected_type = (Type:boolSort);
     t.expected_type = this.expected_type;
