@@ -40,13 +40,13 @@ translate_spec() { # <spec file> <out dir> <java file> <max depth> <feature opti
   pushd "$out_dir" > /dev/null ; ./compile.sh "$(basename $java_file)" ; popd > /dev/null
 }
 
-translate_spec "c.ls"              "c/"          "c.java"               11 --allFeatures
-translate_spec "lua.ls"            "lua/"        "lua.java"             13 --allFeatures
-translate_spec "smt.ls"            "smt/"        "smt.java"             11 --allFeatures
-translate_spec "smt_fp.ls"         "smt/"        "smt_fp.java"          11 --allFeatures
-translate_spec "smt_strings.ls"    "smt/"        "smt_strings.java"     13 --allFeatures
-translate_spec "smt_strings.ls"    "smt/"        "smt_strings_sub.java" 13 '--features check-sat,regex,str_lex,char,ite_regex'
-translate_spec "sql_wrapper.ls"    "sql/"        "sql_wrapper.java"     40 --allFeatures
-translate_spec "sql_arith.ls"      "sql/"        "sql_arith.java"       40 --allFeatures
-translate_spec "paper_spec.ls"     "paper_spec/" "paper_spec.java"      11 --allFeatures
-translate_spec "paper_spec_gen.ls" "paper_spec/" "paper_spec_gen.java"  11 --allFeatures
+translate_spec "c.ls"              "c/"          "c.java"                    11 --allFeatures
+translate_spec "lua.ls"            "lua/"        "lua.java"                  13 --allFeatures
+translate_spec "smt.ls"            "smt/"        "smt.java"                  11 --allFeatures
+translate_spec "smt_fp.ls"         "smt/"        "smt_fp.java"               11 --allFeatures
+translate_spec "smt_strings.ls"    "smt/"        "smt_strings.java"          13 --allFeatures
+translate_spec "smt_strings.ls"    "smt/"        "smt_strings_cvc4_1_8.java" 13 '--features check-sat,regex,str_lex,char'
+translate_spec "sql_wrapper.ls"    "sql/"        "sql_wrapper.java"          40 --allFeatures
+translate_spec "sql_arith.ls"      "sql/"        "sql_arith.java"            40 --allFeatures
+translate_spec "paper_spec.ls"     "paper_spec/" "paper_spec.java"           11 --allFeatures
+translate_spec "paper_spec_gen.ls" "paper_spec/" "paper_spec_gen.java"       11 --allFeatures

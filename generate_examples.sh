@@ -42,8 +42,8 @@ print_step "SMT (strings)"
   --out "$out_dir/smt_strings/q_#{SEED}.smt2"
 
 print_step "SMT (strings, subset)"
-"$(dirname "$0")/out/smt/run.sh" smt_strings_sub --seed 0 --count 10 \
-  --out "$out_dir/smt_strings_sub/q_#{SEED}.smt2"
+"$(dirname "$0")/out/smt/run.sh" smt_strings_cvc4_1_8 --seed 0 --count 10 \
+  --out "$out_dir/smt_strings_cvc4_1_8/q_#{SEED}.smt2"
 
 print_step "SQL (wrapper functions)"
 "$(dirname "$0")/out/sql/run.sh" sql_wrapper --seed 0 --count 10 \

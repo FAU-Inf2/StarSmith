@@ -34,7 +34,14 @@ public abstract class Type {
   private static final Type intSort = new PrimitiveType("Int");
   private static final Type realSort = new PrimitiveType("Real");
   private static final Type stringSort = new PrimitiveType("String");
-  private static final Type regLanSort = new PrimitiveType("RegLan");
+  private static final Type regLanSort = new Type() {
+
+    @Override
+    public final boolean equals(final Object other) {
+      return this == other;
+    }
+
+  };
 
   public static final Type unknownSort() {
     return unknownSort;
