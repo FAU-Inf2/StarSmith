@@ -13,9 +13,11 @@ function print_step {
 
 compile_args=$@
 
-out_dirs=('c' 'lua' 'smt' 'smt' 'smt' 'sql' 'sql' 'paper_spec' 'paper_spec')
-specs=('c' 'lua' 'smt' 'smt_fp' 'smt_strings' 'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
-max_depths=('11' '13' '11' '11' '13' '40' '40' '11' '11')
+out_dirs=('c' 'lua' 'smt' 'smt' 'smt' 'smt' 'sql' 'sql' 'paper_spec' 'paper_spec')
+specs=('c' 'lua' 'smt' 'smt_fp' 'smt_strings' 'smt_strings'  'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
+java_files=('c' 'lua' 'smt' 'smt_fp' 'smt_strings' 'smt_strings_sub' 'sql_wrapper' 'sql_arith' 'paper_spec' 'paper_spec_generators')
+max_depths=('11' '13' '11' '11' '13' '13' '40' '40' '11' '11')
+feature_options=('--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures' '--features check-sat,regex,str_lex,char,ite_regex' '--allFeatures' '--allFeatures' '--allFeatures' '--allFeatures')
 
 
 # == TRANSLATE RUNTIME CLASSES
@@ -31,11 +33,12 @@ print_step "translate specifications"
 for i in ${!specs[@]} ; do
   spec_file="specs/${specs[$i]}.ls"
   out_dir="out/${out_dirs[$i]}"
-  java_file="$out_dir/${specs[$i]}.java"
+  java_file="$out_dir/${java_files[$i]}.java"
   max_depth="${max_depths[$i]}"
+  feature_option="${feature_options[$i]}"
 
   echo "- $spec_file => $java_file"
 
-  ./translate_spec.sh --spec "$spec_file" --maxDepth "$max_depth" --allFeatures --toJava "$java_file" $compile_args
+  ./translate_spec.sh --spec "$spec_file" --maxDepth "$max_depth" $feature_option --toJava "$java_file" $compile_args
   pushd "$out_dir" > /dev/null ; ./compile.sh "$(basename $java_file)" ; popd > /dev/null
 done
