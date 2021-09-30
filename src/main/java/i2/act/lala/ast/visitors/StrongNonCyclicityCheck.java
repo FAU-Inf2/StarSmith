@@ -9,6 +9,7 @@ import i2.act.lala.semantics.attributes.ISSIGraph;
 import i2.act.lala.semantics.symbols.AttributeSymbol;
 import i2.act.lala.semantics.symbols.ChildSymbol;
 import i2.act.lala.semantics.symbols.ClassSymbol;
+import i2.act.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -473,7 +474,8 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   private final void printISSI() {
     System.out.println("digraph G {");
 
-    System.out.println("  node [fontname=\"Droid Sans Mono\"];");
+    System.out.println("  graph [fontname=\"Droid Sans Mono\", nodesep=2, ranksep=2];");
+    System.out.println("  node [fontname=\"Droid Sans Mono\", shape=box];");
     System.out.println("  compound=true;");
 
     final Map<AttributeSymbol, String> attributeNames = new HashMap<>();
@@ -487,6 +489,9 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
       final ISSIGraph issiGraph = this.issiGraphs.get(classSymbol);
 
       System.out.format("  subgraph cluster%d {\n", classIndex);
+      System.out.format("    graph [label=\"%s\", labelloc=t, penwidth=3];\n", className);
+      System.out.format("    node [penwidth=3];\n");
+      System.out.format("    edge [penwidth=3];\n");
 
       for (final AttributeSymbol attribute : issiGraph.getAttributes()) {
         final String attributeName = String.format("attr%d", attributeIndex);
@@ -498,19 +503,48 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
         ++attributeIndex;
       }
 
+      for (final AttributeSymbol fromAttribute : issiGraph.getAttributes()) {
+        final String fromAttributeName = attributeNames.get(fromAttribute);
+        assert (fromAttributeName != null);
+
+        for (final AttributeSymbol toAttribute : issiGraph.getDependencies(fromAttribute)) {
+          final String toAttributeName = attributeNames.get(toAttribute);
+          assert (toAttributeName != null);
+
+          System.out.format("    %s -> %s;\n", fromAttributeName, toAttributeName);
+        }
+      }
+
       System.out.println("  }");
 
       ++classIndex;
     }
 
+    final Set<Pair<AttributeSymbol, AttributeSymbol>> visited = new HashSet<>();
+
     for (final ProductionDeclaration production : this.dependencyGraphs.keySet()) {
       final DependencyGraph dependencyGraph = this.dependencyGraphs.get(production);
 
       for (final AttributeInstance from : dependencyGraph.getAttributes()) {
-        final String fromName = attributeNames.get(from.attributeSymbol);
+        final AttributeSymbol fromSymbol = from.attributeSymbol;
+        final String fromName = attributeNames.get(fromSymbol);
+
         for (final AttributeInstance to : dependencyGraph.getDependencies(from)) {
-          final String toName = attributeNames.get(to.attributeSymbol);
-          System.out.format("  %s -> %s;\n", fromName, toName);
+          final AttributeSymbol toSymbol = to.attributeSymbol;
+
+          if (fromSymbol.getContainingClass() == toSymbol.getContainingClass()) {
+            continue;
+          }
+
+          final Pair<AttributeSymbol, AttributeSymbol> edge = new Pair<>(fromSymbol, toSymbol);
+
+          if (visited.contains(edge)) {
+            continue;
+          }
+          visited.add(edge);
+
+          final String toName = attributeNames.get(toSymbol);
+          System.out.format("  %s -> %s [penwidth=1, style=dashed];\n", fromName, toName);
         }
       }
     }
