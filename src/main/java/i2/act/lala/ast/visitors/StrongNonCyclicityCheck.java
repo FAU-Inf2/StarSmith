@@ -24,6 +24,7 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
 
   private static final boolean DEBUG = false;
 
+  private final HashSet<ClassDeclaration> classes;
   private final Map<ProductionDeclaration, DependencyGraph> dependencyGraphs;
   private final Map<ClassSymbol, ISSIGraph> issiGraphs;
 
@@ -40,6 +41,7 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
     this.printDependencyGraphs = printDependencyGraphs;
     this.unitClasses = unitClasses;
 
+    this.classes = new LinkedHashSet<ClassDeclaration>();
     this.dependencyGraphs = new HashMap<ProductionDeclaration, DependencyGraph>();
     this.issiGraphs = new HashMap<ClassSymbol, ISSIGraph>();
   }
@@ -201,6 +203,8 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
       final List<ClassDeclaration> classDeclarations = specification.getClassDeclarations();
       for (final ClassDeclaration classDeclaration : classDeclarations) {
         if (classDeclaration instanceof ProductionClassDeclaration) {
+          this.classes.add(classDeclaration);
+
           final ProductionClassDeclaration productionClassDeclaration =
               (ProductionClassDeclaration) classDeclaration;
 
@@ -558,40 +562,73 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   private final void printDependencyGraphs() {
     System.out.println("digraph G {");
 
-    System.out.println("  node [fontname=\"Droid Sans Mono\"];");
+    System.out.println("  graph [fontname=\"Droid Sans Mono\"];");
+    System.out.println("  node [fontname=\"Droid Sans Mono\", shape=box, penwidth=3];");
+    System.out.println("  edge [penwidth=3];");
     System.out.println("  compound=true;");
 
     int clusterIndex = 0;
     int attributeIndex = 0;
 
-    for (final ProductionDeclaration production : this.dependencyGraphs.keySet()) {
-      final DependencyGraph dependencyGraph = this.dependencyGraphs.get(production);
-
+    for (final ClassDeclaration classDeclaration : this.classes) {
       System.out.format("  subgraph cluster%d {\n", ++clusterIndex);
-      System.out.format("    label=\"%s\";\n", production.getName());
+      System.out.format("    graph [label=\"%s\", penwidth=3];\n", classDeclaration.getName());
 
-      final Map<AttributeInstance, String> attributeNames = new HashMap<>();
+      for (final ProductionDeclaration production : classDeclaration.successors()) {
+        final DependencyGraph dependencyGraph = this.dependencyGraphs.get(production);
+        assert (dependencyGraph != null);
 
-      for (final AttributeInstance attribute : dependencyGraph.getAttributes()) {
-        final String attributeName = String.format("attr%d", attributeIndex);
-        attributeNames.put(attribute, attributeName);
+        System.out.format("    subgraph cluster%d {\n", ++clusterIndex);
+        System.out.format("      graph [label=\"%s\"; rankdir=TB]\n", production.getName());
 
-        final String attributeLabel = attribute.toString();
-        System.out.format("    %s [label=\"%s\"];\n", attributeName, attributeLabel);
+        final Map<AttributeInstance, String> attributeNames = new HashMap<>();
 
-        ++attributeIndex;
-      }
+        final List<String> thisAttributes = new ArrayList<>();
+        final List<String> childAttributes = new ArrayList<>();
 
-      for (final AttributeInstance from : dependencyGraph.getAttributes()) {
-        final String fromName = attributeNames.get(from);
-        assert (fromName != null);
+        for (final AttributeInstance attribute : dependencyGraph.getAttributes()) {
+          final String attributeName = String.format("attr%d", attributeIndex);
+          attributeNames.put(attribute, attributeName);
 
-        for (final AttributeInstance to : dependencyGraph.getDependencies(from)) {
-          final String toName = attributeNames.get(to);
-          assert (toName != null);
+          final String attributeLabel = attribute.toString();
+          System.out.format("      %s [label=\"%s\"];\n", attributeName, attributeLabel);
 
-          System.out.format("    %s -> %s;\n", fromName, toName);
+          ++attributeIndex;
+
+          if (attribute.childSymbol == production.getThisSymbol()) {
+            thisAttributes.add(attributeName);
+          } else {
+            childAttributes.add(attributeName);
+          }
         }
+
+        @SuppressWarnings("unchecked")
+        final List<String>[] attributeSets =
+            (List<String>[]) new List[] {thisAttributes, childAttributes};
+
+        for (final List<String> attributeSet : attributeSets) {
+          System.out.format("    {rank = same;");
+
+          for (final String attributeName : attributeSet) {
+            System.out.format(" %s;", attributeName);
+          }
+
+          System.out.format("}\n");
+        }
+
+        for (final AttributeInstance from : dependencyGraph.getAttributes()) {
+          final String fromName = attributeNames.get(from);
+          assert (fromName != null);
+
+          for (final AttributeInstance to : dependencyGraph.getDependencies(from)) {
+            final String toName = attributeNames.get(to);
+            assert (toName != null);
+
+            System.out.format("      %s -> %s;\n", fromName, toName);
+          }
+        }
+
+        System.out.println("    }\n");
       }
 
       System.out.println("  }\n");
