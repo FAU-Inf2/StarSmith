@@ -4,21 +4,29 @@ import i2.act.errors.specification.InvalidLanguageSpecificationException;
 import i2.act.errors.specification.LanguageSpecificationError;
 import i2.act.lala.ast.ProductionDeclaration;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 public final class CyclicAttributeDependencyException
     extends InvalidLanguageSpecificationException {
 
-  private final ProductionDeclaration productionDeclaration;
+  private final Collection<ProductionDeclaration> cyclicProductions;
 
-  public CyclicAttributeDependencyException(final ProductionDeclaration productionDeclaration) {
-    super(new LanguageSpecificationError(productionDeclaration.getSourcePosition(),
-        String.format("attribute dependency cycle detected in production '%s'",
-            productionDeclaration.getName())));
+  public CyclicAttributeDependencyException(
+      final Collection<ProductionDeclaration> cyclicProductions) {
+    super(new LanguageSpecificationError(
+        cyclicProductions.iterator().next().getSourcePosition(),
+        String.format("attribute dependency cycle detected in the following productions: %s",
+            cyclicProductions
+                .stream()
+                .map(ProductionDeclaration::getName)
+                .collect(Collectors.joining(", ")))));
 
-    this.productionDeclaration = productionDeclaration;
+    this.cyclicProductions = cyclicProductions;
   }
 
-  public final ProductionDeclaration getProductionDeclaration() {
-    return this.productionDeclaration;
+  public final Collection<ProductionDeclaration> getCyclicProductions() {
+    return this.cyclicProductions;
   }
 
 }

@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<Void, Void> {
+public final class StrongNonCyclicityCheck
+    extends BaseLaLaSpecificationVisitor<Set<ProductionDeclaration>, Void> {
 
   private static final boolean DEBUG = false;
 
@@ -54,8 +55,15 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   public static final void analyze(final LaLaSpecification specification,
       final boolean printISSI, final boolean printDependencyGraphs,
       final Set<ClassDeclaration> unitClasses) {
+    final Set<ProductionDeclaration> cyclicProductions = new LinkedHashSet<>();
+
     specification.accept(
-        new StrongNonCyclicityCheck(printISSI, printDependencyGraphs, unitClasses), null);
+        new StrongNonCyclicityCheck(printISSI, printDependencyGraphs, unitClasses),
+        cyclicProductions);
+
+    if (!cyclicProductions.isEmpty()) {
+      throw new CyclicAttributeDependencyException(cyclicProductions);
+    }
   }
 
   private final void addAttributeInstances(final ChildSymbol childSymbol,
@@ -190,10 +198,11 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   }
 
   @Override
-  public final Void visit(final LaLaSpecification specification, final Void parameter) {
+  public final Void visit(final LaLaSpecification specification,
+      final Set<ProductionDeclaration> cyclicProductions) {
     // visit language specification to create the dependency graphs for each production
     // as well as the initial IS-SI graph for each class
-    super.visit(specification, parameter);
+    super.visit(specification, cyclicProductions);
 
     // compute transitive closure of attribute dependencies until no more changes occur
     boolean change = true;
@@ -228,7 +237,7 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
                 simpleEdgesClone.printDot();
               }
 
-              throw new CyclicAttributeDependencyException(productionDeclaration);
+              cyclicProductions.add(productionDeclaration);
             }
 
             // update IS-SI graphs with newly detected edges
@@ -256,11 +265,12 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   }
 
   @Override
-  public final Void visit(final ProductionClassDeclaration classDeclaration, final Void parameter) {
+  public final Void visit(final ProductionClassDeclaration classDeclaration,
+      final Set<ProductionDeclaration> cyclicProductions) {
     this.currentClassDeclaration = classDeclaration;
 
     // visit children to compute dependency graph for each production
-    super.visit(classDeclaration, parameter);
+    super.visit(classDeclaration, cyclicProductions);
 
     this.currentClassDeclaration = null;
 
@@ -284,10 +294,11 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   }
 
   @Override
-  public final Void visit(final LiteralClassDeclaration classDeclaration, final Void parameter) {
+  public final Void visit(final LiteralClassDeclaration classDeclaration,
+      final Set<ProductionDeclaration> cyclicProductions) {
     this.currentClassDeclaration = classDeclaration;
 
-    super.visit(classDeclaration, parameter);
+    super.visit(classDeclaration, cyclicProductions);
 
     this.currentClassDeclaration = null;
 
@@ -312,18 +323,18 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
 
   @Override
   public final Void visit(final TreeProductionDeclaration productionDeclaration,
-      final Void parameter) {
-    return visit((ProductionDeclaration) productionDeclaration, parameter);
+      final Set<ProductionDeclaration> cyclicProductions) {
+    return visit((ProductionDeclaration) productionDeclaration, cyclicProductions);
   }
 
   @Override
   public final Void visit(final GeneratorProductionDeclaration productionDeclaration,
-      final Void parameter) {
-    return visit((ProductionDeclaration) productionDeclaration, parameter);
+      final Set<ProductionDeclaration> cyclicProductions) {
+    return visit((ProductionDeclaration) productionDeclaration, cyclicProductions);
   }
 
   private final Void visit(final ProductionDeclaration productionDeclaration,
-      final Void parameter) {
+      final Set<ProductionDeclaration> cyclicProductions) {
     assert (this.currentClassDeclaration != null);
 
     final DependencyGraph dependencyGraph = new DependencyGraph();
