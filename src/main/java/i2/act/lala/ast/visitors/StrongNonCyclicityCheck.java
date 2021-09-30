@@ -23,7 +23,6 @@ import java.util.Set;
 public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<Void, Void> {
 
   private static final boolean DEBUG = false;
-  private static final boolean PRINT_DEPENDENCY_GRAPHS = false;
 
   private final Map<ProductionDeclaration, DependencyGraph> dependencyGraphs;
   private final Map<ClassSymbol, ISSIGraph> issiGraphs;
@@ -31,12 +30,14 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   private ClassDeclaration currentClassDeclaration;
 
   private final boolean printISSI;
+  private final boolean printDependencyGraphs;
 
   private final Set<ClassDeclaration> unitClasses;
 
-  private StrongNonCyclicityCheck(final boolean printISSI,
+  private StrongNonCyclicityCheck(final boolean printISSI, final boolean printDependencyGraphs,
       final Set<ClassDeclaration> unitClasses) {
     this.printISSI = printISSI;
+    this.printDependencyGraphs = printDependencyGraphs;
     this.unitClasses = unitClasses;
 
     this.dependencyGraphs = new HashMap<ProductionDeclaration, DependencyGraph>();
@@ -44,13 +45,15 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
   }
 
   public static final void analyze(final LaLaSpecification specification,
-      final boolean printDot) {
-    analyze(specification, printDot, null);
+      final boolean printISSI, final boolean printDependencyGraphs) {
+    analyze(specification, printISSI, printDependencyGraphs, null);
   }
 
   public static final void analyze(final LaLaSpecification specification,
-      final boolean printDot, final Set<ClassDeclaration> unitClasses) {
-    specification.accept(new StrongNonCyclicityCheck(printDot, unitClasses), null);
+      final boolean printISSI, final boolean printDependencyGraphs,
+      final Set<ClassDeclaration> unitClasses) {
+    specification.accept(
+        new StrongNonCyclicityCheck(printISSI, printDependencyGraphs, unitClasses), null);
   }
 
   private final void addAttributeInstances(final ChildSymbol childSymbol,
@@ -235,9 +238,9 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
       printISSI();
     }
 
-    //if (PRINT_DEPENDENCY_GRAPHS) {
-    //  printDependencyGraphs();
-    //}
+    if (this.printDependencyGraphs) {
+      printDependencyGraphs();
+    }
 
     // compute the attributes that the guard attributes depend on
     computeGuardDependencies();
@@ -739,8 +742,8 @@ public final class StrongNonCyclicityCheck extends BaseLaLaSpecificationVisitor<
       }
     }
 
-    // just for debugging...
-    if (PRINT_DEPENDENCY_GRAPHS) {
+    // XXX just for debugging...
+    if (false) {
       System.out.println("digraph G {");
 
       System.out.println("  node [fontname=\"Droid Sans Mono\"];");

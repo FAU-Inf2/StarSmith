@@ -96,7 +96,7 @@ public final class StrongNonCyclicityCheckTest {
     }
 
     try {
-      StrongNonCyclicityCheck.analyze(specification, false);
+      StrongNonCyclicityCheck.analyze(specification, false, false);
     } catch (final InvalidLanguageSpecificationException exception) {
       final List<LanguageSpecificationError> errors = exception.getLanguageSpecificationErrors();
       actualErrorPositions = TestUtil.getErrorPositions(errors);

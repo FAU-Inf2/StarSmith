@@ -35,6 +35,7 @@ public final class StarSmithTranslate {
   private static final String OPTION_PRINT_ATTRIBUTE_DEPENDENCIES = "--printDependencies";
   private static final String OPTION_PRINT_DEPTHS = "--printDepths";
   private static final String OPTION_PRINT_ISSI_GRAPHS = "--printISSI";
+  private static final String OPTION_PRINT_DEPENDENCY_GRAPHS = "--printDependencyGraphs";
   private static final String OPTION_MAX_DEPTH = "--maxDepth";
   private static final String OPTION_TRANSLATE_TO_JAVA = "--toJava";
   private static final String OPTION_PACKAGE = "--package";
@@ -52,6 +53,7 @@ public final class StarSmithTranslate {
     argumentsParser.addOption(OPTION_PRINT_ATTRIBUTE_DEPENDENCIES, false);
     argumentsParser.addOption(OPTION_PRINT_DEPTHS, false);
     argumentsParser.addOption(OPTION_PRINT_ISSI_GRAPHS, false);
+    argumentsParser.addOption(OPTION_PRINT_DEPENDENCY_GRAPHS, false);
     argumentsParser.addOption(OPTION_TRANSLATE_TO_JAVA, false, true, "<path to Java file>");
     argumentsParser.addOption(OPTION_PACKAGE, false, true, "<package of the generated class>");
     argumentsParser.addOption(OPTION_FEATURES, false, true, "<comma separated list of features>");
@@ -114,6 +116,7 @@ public final class StarSmithTranslate {
         arguments.hasOption(OPTION_PRINT_ATTRIBUTE_DEPENDENCIES);
     final boolean printDepths = arguments.hasOption(OPTION_PRINT_DEPTHS);
     final boolean printISSI = arguments.hasOption(OPTION_PRINT_ISSI_GRAPHS);
+    final boolean printDependencyGraphs = arguments.hasOption(OPTION_PRINT_DEPENDENCY_GRAPHS);
     final String toJavaFileName = arguments.getOptionOr(OPTION_TRANSLATE_TO_JAVA, null);
     final String packageName = arguments.getOptionOr(OPTION_PACKAGE, null);
     final Set<String> features =
@@ -123,8 +126,8 @@ public final class StarSmithTranslate {
 
     try {
       starSmithTranslate.run(prettyPrint, printGeneratorGraph, printDominatorTree,
-          printAttributeDependencies, printDepths, toJavaFileName, printISSI, packageName,
-          features);
+          printAttributeDependencies, printDepths, toJavaFileName, printISSI, printDependencyGraphs,
+          packageName, features);
     } catch (final InvalidLanguageSpecificationException exception) {
       System.err.println("[!] invalid language specification");
       System.err.println(exception.getMessage());
@@ -150,7 +153,7 @@ public final class StarSmithTranslate {
   public final void run(final boolean prettyPrint, final boolean printGeneratorGraph,
       final boolean printDominatorTree, final boolean printAttributeDependencies,
       final boolean printDepths, final String toJavaFileName, final boolean printISSI,
-      final String packageName, final Set<String> features) {
+      final boolean printDependencyGraphs, final String packageName, final Set<String> features) {
     final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(System.out));
 
     final LaLaParser parser =
@@ -161,7 +164,7 @@ public final class StarSmithTranslate {
     // semantic analysis
     SemanticAnalysis.analyze(specification);
     AttributeCheck.analyze(specification);
-    StrongNonCyclicityCheck.analyze(specification, printISSI);
+    StrongNonCyclicityCheck.analyze(specification, printISSI, printDependencyGraphs);
 
     // warn on unused classes
     UnusedClasses.emitWarnings(specification);
