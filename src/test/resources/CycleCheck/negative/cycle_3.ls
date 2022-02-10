@@ -1,31 +1,37 @@
-class A {
+class Root {
 
-  p_A ("${b : B}") {
-    b.b1 = b.b2;
+  r ("${med : Med}") {
+    med.i = med.s;
   }
 
 }
 
-class B {
+class Med {
 
-  inh b1 : int;
-  syn b2 : int;
+  inh i : int;
+  syn s : int;
 
-  p_B ("${c1 : C}${c2 : C}") {
-    c1.c1 = this.b1;
-    c2.c1 = 13;
-    this.b2 = c2.c2;
+  m ("${child : Child}") {
+    child.i1 = this.i;
+    child.i2 = child.s1;
+    this.s = child.s2;
   }
 
 }
 
-class C {
+class Child {
 
-  inh c1 : int;
-  syn c2 : int;
+  inh i1 : int; inh i2 : int;
+  syn s1 : int; syn s2 : int;
 
-  p_C ("") {
-    this.c2 = this.c1;
+  c1 ("#{this.i1}#{this.i2}") {
+    this.s1 = this.i1;
+    this.s2 = 0;
+  }
+
+  c2 ("#{this.i1}#{this.i2}") {
+    this.s2 = this.i2;
+    this.s1 = 0;
   }
 
 }

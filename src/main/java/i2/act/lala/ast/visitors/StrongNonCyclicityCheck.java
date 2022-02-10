@@ -69,7 +69,6 @@ public final class StrongNonCyclicityCheck
   private final void addAttributeInstances(final ChildSymbol childSymbol,
       final DependencyGraph dependencyGraph) {
     final ClassSymbol classSymbol = childSymbol.getType();
-
     final List<AttributeSymbol> attributes = classSymbol.getAttributes().gatherSymbols();
     for (final AttributeSymbol attribute : attributes) {
       final AttributeInstance attributeInstance = new AttributeInstance(childSymbol, attribute);
@@ -90,7 +89,7 @@ public final class StrongNonCyclicityCheck
 
     final AttributeInstance attributeInstance =
         new AttributeInstance(targetChild, attributeSymbol);
-        
+
     return attributeInstance;
   }
 
@@ -98,18 +97,27 @@ public final class StrongNonCyclicityCheck
       final ProductionDeclaration productionDeclaration) {
     final DependencyGraph dependencyGraph = this.dependencyGraphs.get(productionDeclaration);
     assert (dependencyGraph != null);
-    
+
     return dependencyGraph.clone();
   }
 
   private final void addEdgesFromISSIGraphs(final DependencyGraph dependencyGraph,
-      final ClassSymbol classSymbol) {
+      final ChildSymbol childSymbol) {
+    final ClassSymbol classSymbol = childSymbol.getType();
+    assert (classSymbol != null);
+
     final ISSIGraph issiGraph = this.issiGraphs.get(classSymbol);
     assert (issiGraph != null);
 
     for (final AttributeSymbol from : issiGraph.getAttributes()) {
+      final AttributeInstance fromInstance = dependencyGraph.getAttribute(childSymbol, from);
+      assert (fromInstance != null);
+
       for (final AttributeSymbol to : issiGraph.getDependencies(from)) {
-        dependencyGraph.addAllDependencies(from, to);
+        final AttributeInstance toInstance = dependencyGraph.getAttribute(childSymbol, to);
+        assert (toInstance != null);
+
+        dependencyGraph.addDependency(fromInstance, toInstance);
       }
     }
   }
@@ -121,10 +129,7 @@ public final class StrongNonCyclicityCheck
       final ChildSymbol thisSymbol = productionDeclaration.getThisSymbol();
       assert (thisSymbol != null);
 
-      final ClassSymbol classSymbol = thisSymbol.getType();
-      assert (classSymbol != null);
-
-      addEdgesFromISSIGraphs(dependencyGraph, classSymbol);
+      addEdgesFromISSIGraphs(dependencyGraph, thisSymbol);
     }
 
     // handle children ('right hand side' of production)
@@ -134,10 +139,7 @@ public final class StrongNonCyclicityCheck
         final ChildSymbol childSymbol = childDeclaration.getSymbol();
         assert (childSymbol != null);
 
-        final ClassSymbol classSymbol = childSymbol.getType();
-        assert (classSymbol != null);
-
-        addEdgesFromISSIGraphs(dependencyGraph, classSymbol);
+        addEdgesFromISSIGraphs(dependencyGraph, childSymbol);
       }
     }
   }
@@ -229,6 +231,7 @@ public final class StrongNonCyclicityCheck
 
             // compute transitive closure and check that no cycles exist
             dependencyGraphClone.computeTransitiveClosure();
+
             if (dependencyGraphClone.hasSelfDependency()) {
               if (DEBUG) {
                 final DependencyGraph simpleEdgesClone =
@@ -485,7 +488,7 @@ public final class StrongNonCyclicityCheck
         attributes.add(attributeDeclaration);
       }
     }
-    
+
     return attributes;
   }
 
