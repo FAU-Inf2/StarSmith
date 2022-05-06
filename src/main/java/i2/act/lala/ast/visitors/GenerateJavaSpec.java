@@ -92,6 +92,8 @@ public final class GenerateJavaSpec
 
     writeDeserialization(writer);
 
+    writeAttributeEvaluationExperiments(writer);
+
     writeMain(writer);
 
     FileUtil.write("}\n", writer);
@@ -1734,6 +1736,25 @@ public final class GenerateJavaSpec
     FileUtil.write(
         String.format("\t\t\tDeserialization.deserialization(%s, DEFAULT_MAX_DEPTH, args);\n",
             factoryInstance),
+        writer);
+
+    FileUtil.write("\t\t}\n\n", writer);
+
+    FileUtil.write("\t}\n\n", writer);
+  }
+
+  private final void writeAttributeEvaluationExperiments(final BufferedWriter writer) {
+    FileUtil.write("\tpublic static final class AttributeEvaluationExperiments {\n\n", writer);
+
+    FileUtil.write("\t\tpublic static final void main(final String[] args) {\n", writer);
+
+    // specification factory
+    final String factoryInstance = String.format("%s.INSTANCE", getFactoryName());
+
+    // call Deserialization main
+    FileUtil.write(
+        String.format("\t\t\ti2.act.fuzzer.main.AttributeEvaluationExperiments"
+            + ".run(%s, DEFAULT_MAX_DEPTH, args);\n", factoryInstance),
         writer);
 
     FileUtil.write("\t\t}\n\n", writer);

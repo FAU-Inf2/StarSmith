@@ -253,6 +253,16 @@ public abstract class Node {
     }
   }
 
+  public final int numberOfAttributes() {
+    int numberOfAttributes = this.getNodeClass().getAttributes().size();
+
+    for (final Node child : this.children) {
+      numberOfAttributes += child.numberOfAttributes();
+    }
+
+    return numberOfAttributes;
+  }
+
   public final String getNodeName() {
     return String.format("<!%s<%x>!>", this.getNodeClass().getName(), hashCode());
   }
