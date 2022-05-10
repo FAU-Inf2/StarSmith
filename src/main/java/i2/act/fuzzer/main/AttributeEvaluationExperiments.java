@@ -92,7 +92,7 @@ public final class AttributeEvaluationExperiments {
     {
       if (arguments.hasOption(OPTION_OUT)) {
         outWriter = FileUtil.openFileForWriting(arguments.getOption(OPTION_OUT), true);
-        FileUtil.write("#NODES,ATTRS,TIME\n", outWriter);
+        FileUtil.write("#NODES,ATTRS,GEN_TIME,EVAL_TIME\n", outWriter);
       } else {
         outWriter = null;
       }
@@ -115,26 +115,35 @@ public final class AttributeEvaluationExperiments {
 
     long totalSize = 0;
     long totalNumberOfAttributes = 0;
+    long totalGenerationTime = 0;
 
     // generate programs
     {
-      final long timeBefore = System.currentTimeMillis();
-
       for (int idx = 0; idx < count || count == FuzzerLoop.INFINITE_PROGRAMS; ++idx) {
         final long thisSeed = seed + idx;
+
+        final long timeBeforeGeneration = System.currentTimeMillis();
 
         final Node program = generateProgram(
             specification, thisSeed, defaultMaxDepth, shallowAttributeEvaluation, true);
 
+        final long timeAfterGeneration = System.currentTimeMillis();
+
         final int size = program.size();
         final int numberOfAttributes = program.numberOfAttributes();
 
+        final long timeGeneration = timeAfterGeneration - timeBeforeGeneration;
+
         totalSize += size;
         totalNumberOfAttributes += numberOfAttributes;
+        totalGenerationTime += timeGeneration;
 
         if (accumulated) {
           programs.add(program);
         } else {
+          System.out.format("=> program generation took %d ms (%d nodes)\n",
+              timeGeneration, size);
+
           // attribute evaluation
           {
             final long timeBeforeEvaluation = System.currentTimeMillis();
@@ -143,12 +152,12 @@ public final class AttributeEvaluationExperiments {
 
             final long timeEvaluation = timeAfterEvaluation - timeBeforeEvaluation;
 
-            System.out.format("=> attribute evaluation took %d ms (%d nodes, %d attributes)\n",
-                timeEvaluation, size, numberOfAttributes);
+            System.out.format("=> attribute evaluation took %d ms (%d attributes)\n",
+                timeEvaluation, numberOfAttributes);
 
             if (outWriter != null) {
-              FileUtil.write(
-                  String.format("%d,%d,%d\n", size, numberOfAttributes, timeEvaluation),
+              FileUtil.write(String.format(
+                  "%d,%d,%d,%d\n", size, numberOfAttributes, timeGeneration, timeEvaluation),
                   outWriter);
             }
           }
@@ -161,10 +170,9 @@ public final class AttributeEvaluationExperiments {
         }
       }
 
-      final long timeAfter = System.currentTimeMillis();
-
       if (accumulated) {
-        System.out.format("=> program generation took %d ms\n", timeAfter - timeBefore);
+        System.out.format("=> program generation took %d ms (%d nodes)\n",
+            totalGenerationTime, totalSize);
       }
     }
 
@@ -181,13 +189,14 @@ public final class AttributeEvaluationExperiments {
 
         final long timeAfterEvaluation = System.currentTimeMillis();
 
-        final long timeEvaluation = timeAfterEvaluation - timeBeforeEvaluation;
+        final long totalEvaluationTime = timeAfterEvaluation - timeBeforeEvaluation;
 
-        System.out.format("=> attribute evaluation took %d ms\n", timeEvaluation);
+        System.out.format("=> attribute evaluation took %d ms (%d attributes)\n",
+            totalEvaluationTime, totalNumberOfAttributes);
 
         if (outWriter != null) {
-          FileUtil.write(
-              String.format("%d,%d,%d\n", totalSize, totalNumberOfAttributes, timeEvaluation),
+          FileUtil.write(String.format("%d,%d,%d,%d\n",
+              totalSize, totalNumberOfAttributes, totalGenerationTime, totalEvaluationTime),
               outWriter);
         }
       }
