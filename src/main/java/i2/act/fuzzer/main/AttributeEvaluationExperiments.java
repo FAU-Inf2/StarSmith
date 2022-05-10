@@ -22,6 +22,7 @@ public final class AttributeEvaluationExperiments {
   private static final String OPTION_SEED = "--seed";
   private static final String OPTION_COUNT = "--count";
   private static final String OPTION_NAIVE = "--naive";
+  private static final String OPTION_NO_SHALLOW_EVALUATION = "--noShallowEval";
   private static final String OPTION_ACCUMULATED = "--accumulated";
   private static final String OPTION_SANITY_CHECKS = "--sanityChecks";
   private static final String OPTION_OUT = "--out";
@@ -35,6 +36,7 @@ public final class AttributeEvaluationExperiments {
     argumentsParser.addOption(OPTION_COUNT, false, true, "<number of programs>");
 
     argumentsParser.addOption(OPTION_NAIVE, false);
+    argumentsParser.addOption(OPTION_NO_SHALLOW_EVALUATION, false);
 
     argumentsParser.addOption(OPTION_ACCUMULATED, false);
 
@@ -80,6 +82,8 @@ public final class AttributeEvaluationExperiments {
       System.exit(1);
     }
 
+    final boolean shallowAttributeEvaluation = !arguments.hasOption(OPTION_NO_SHALLOW_EVALUATION);
+
     final boolean accumulated = arguments.hasOption(OPTION_ACCUMULATED);
     final String outFileName = arguments.getOptionOr(OPTION_OUT, null);
     final boolean sanityChecks = arguments.hasOption(OPTION_SANITY_CHECKS);
@@ -119,7 +123,8 @@ public final class AttributeEvaluationExperiments {
       for (int idx = 0; idx < count || count == FuzzerLoop.INFINITE_PROGRAMS; ++idx) {
         final long thisSeed = seed + idx;
 
-        final Node program = generateProgram(specification, thisSeed, defaultMaxDepth, true);
+        final Node program = generateProgram(
+            specification, thisSeed, defaultMaxDepth, shallowAttributeEvaluation, true);
 
         final int size = program.size();
         final int numberOfAttributes = program.numberOfAttributes();
@@ -209,9 +214,11 @@ public final class AttributeEvaluationExperiments {
   }
 
   private static final Node generateProgram(final Specification specification, final long seed,
-      final int maxDepth, final boolean clearAttributeValues) {
+      final int maxDepth, final boolean shallowAttributeEvaluation,
+      final boolean clearAttributeValues) {
     final RandomFuzzer fuzzer = RandomFuzzer.createFor(specification, seed,
             0.f, false, false, -1, -1, false, null, null);
+    fuzzer.shallowAttributeEvaluation = shallowAttributeEvaluation;
 
     final Node program = fuzzer.generateProgram(maxDepth, false);
 

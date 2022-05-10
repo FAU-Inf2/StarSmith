@@ -102,6 +102,8 @@ public class Fuzzer {
 
   public boolean useSpecificPatterns = false;
 
+  public boolean shallowAttributeEvaluation = true;
+
   public Fuzzer(
       final Specification specification,
       final ProductionSelection productionSelection,
@@ -475,7 +477,7 @@ public class Fuzzer {
 
   private final void evaluateAttributes(final Node rootNode, final boolean shallow) {
     if (!this.syntaxOnly) {
-      rootNode.evaluateAttributesLoop(shallow);
+      rootNode.evaluateAttributesLoop(this.shallowAttributeEvaluation && shallow);
     }
   }
 
