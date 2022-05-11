@@ -92,7 +92,7 @@ public final class AttributeEvaluationExperiments {
     {
       if (arguments.hasOption(OPTION_OUT)) {
         outWriter = FileUtil.openFileForWriting(arguments.getOption(OPTION_OUT), true);
-        FileUtil.write("#NODES,ATTRS,GEN_TIME,EVAL_TIME\n", outWriter);
+        FileUtil.write("#NODES,ATTRS,SIZE,GEN_TIME,EVAL_TIME\n", outWriter);
       } else {
         outWriter = null;
       }
@@ -113,8 +113,9 @@ public final class AttributeEvaluationExperiments {
       System.out.println("[i] generating programs");
     }
 
-    long totalSize = 0;
+    long totalNumberOfNodes = 0;
     long totalNumberOfAttributes = 0;
+    long totalProgramSize = 0;
     long totalGenerationTime = 0;
 
     // generate programs
@@ -129,20 +130,22 @@ public final class AttributeEvaluationExperiments {
 
         final long timeAfterGeneration = System.currentTimeMillis();
 
-        final int size = program.size();
+        final int numberOfNodes = program.size();
         final int numberOfAttributes = program.numberOfAttributes();
+        final int programSize = program.printCode().length();
 
         final long timeGeneration = timeAfterGeneration - timeBeforeGeneration;
 
-        totalSize += size;
+        totalNumberOfNodes += numberOfNodes;
         totalNumberOfAttributes += numberOfAttributes;
+        totalProgramSize += programSize;
         totalGenerationTime += timeGeneration;
 
         if (accumulated) {
           programs.add(program);
         } else {
-          System.out.format("=> program generation took %d ms (%d nodes)\n",
-              timeGeneration, size);
+          System.out.format("=> program generation took %d ms (%d nodes, %d B)\n",
+              timeGeneration, numberOfNodes, programSize);
 
           // attribute evaluation
           {
@@ -156,8 +159,8 @@ public final class AttributeEvaluationExperiments {
                 timeEvaluation, numberOfAttributes);
 
             if (outWriter != null) {
-              FileUtil.write(String.format(
-                  "%d,%d,%d,%d\n", size, numberOfAttributes, timeGeneration, timeEvaluation),
+              FileUtil.write(String.format("%d,%d,%d,%d,%d\n",
+                  numberOfNodes, numberOfAttributes, programSize, timeGeneration, timeEvaluation),
                   outWriter);
             }
           }
@@ -171,8 +174,8 @@ public final class AttributeEvaluationExperiments {
       }
 
       if (accumulated) {
-        System.out.format("=> program generation took %d ms (%d nodes)\n",
-            totalGenerationTime, totalSize);
+        System.out.format("=> program generation took %d ms (%d nodes, %d B)\n",
+            totalGenerationTime, totalNumberOfNodes, totalProgramSize);
       }
     }
 
@@ -195,8 +198,9 @@ public final class AttributeEvaluationExperiments {
             totalEvaluationTime, totalNumberOfAttributes);
 
         if (outWriter != null) {
-          FileUtil.write(String.format("%d,%d,%d,%d\n",
-              totalSize, totalNumberOfAttributes, totalGenerationTime, totalEvaluationTime),
+          FileUtil.write(String.format("%d,%d,%d,%d,%d\n",
+              totalNumberOfNodes, totalNumberOfAttributes, totalProgramSize,
+              totalGenerationTime, totalEvaluationTime),
               outWriter);
         }
       }
