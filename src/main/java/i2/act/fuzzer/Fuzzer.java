@@ -102,6 +102,8 @@ public class Fuzzer {
 
   public boolean useSpecificPatterns = false;
 
+  public boolean handleHeightLimitSpecially = true;
+
   public boolean shallowAttributeEvaluation = true;
 
   public Fuzzer(
@@ -398,7 +400,8 @@ public class Fuzzer {
 
     // alternatives exhausted -> fuzzing failed
     final boolean failedDueToHeightLimit =
-        childFailedDueToHeightLimit || failedDueToHeightLimit(rootNode);
+        (this.handleHeightLimitSpecially)
+        && (childFailedDueToHeightLimit || failedDueToHeightLimit(rootNode));
 
     rootNode.clearFailPatterns();
     rootNode.deconstructButKeepInheritedAttributeValues();

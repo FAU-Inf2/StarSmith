@@ -47,6 +47,7 @@ public final class FuzzerLoop {
   private static final String OPTION_BATCH_SIZE = "--batchSize";
 
   private static final String OPTION_USE_SPECIFIC_PATTERNS = "--specificFPs";
+  private static final String OPTION_NO_HEIGHT_FAILURES = "--noHeightFailures";
 
   static {
     argumentsParser = new ProgramArgumentsParser();
@@ -86,6 +87,7 @@ public final class FuzzerLoop {
     argumentsParser.addOption(OPTION_BATCH_SIZE, false, true, "<batch size");
 
     argumentsParser.addOption(OPTION_USE_SPECIFIC_PATTERNS, false);
+    argumentsParser.addOption(OPTION_NO_HEIGHT_FAILURES, false);
   }
 
   private static final void usage() {
@@ -117,6 +119,7 @@ public final class FuzzerLoop {
     int timeout = -1;
     int batchSize = DEFAULT_BATCH_SIZE;
     boolean useSpecificPatterns = false;
+    boolean handleHeightLimitSpecially = true;
 
     try {
       arguments = argumentsParser.parseArgs(args);
@@ -158,6 +161,7 @@ public final class FuzzerLoop {
       batchSize =
           arguments.getIntOptionOr(OPTION_BATCH_SIZE, batchSize);
       useSpecificPatterns = arguments.hasOption(OPTION_USE_SPECIFIC_PATTERNS);
+      handleHeightLimitSpecially = !arguments.hasOption(OPTION_NO_HEIGHT_FAILURES);
     } catch (final InvalidProgramArgumentsException exception) {
       System.err.println("[!] " + exception.getMessage());
       usage();
@@ -173,7 +177,8 @@ public final class FuzzerLoop {
     generatePrograms(specificationFactory, maxDepth, seed, seedInc, count, fileNamePattern,
         fileNamePatternASTs, shortFormat, findBugsCommand, statsFileName, diagnosticsFileName,
         errorFileName, smallProbability, syntaxOnly, restartOnFailure, timeout,
-        maxAlternatives, debug, sanityChecks, batchSize, useSpecificPatterns);
+        maxAlternatives, debug, sanityChecks, batchSize, useSpecificPatterns,
+        handleHeightLimitSpecially);
   }
 
   public static final Node generatePrograms(final SpecificationFactory specificationFactory,
@@ -183,7 +188,7 @@ public final class FuzzerLoop {
       final String errorFileName, final double smallProbability, final boolean syntaxOnly,
       final boolean restartOnFailure, final int timeout, final int maxAlternatives,
       final boolean debug, final boolean sanityChecks, final int batchSize,
-      final boolean useSpecificPatterns) {
+      final boolean useSpecificPatterns, final boolean handleHeightLimitSpecially) {
 
     final BufferedWriter statsWriter;
     {
@@ -223,6 +228,7 @@ public final class FuzzerLoop {
               smallProbability, syntaxOnly, restartOnFailure, timeout, maxAlternatives, debug,
               diagnosticsWriter, errorWriter);
       fuzzer.useSpecificPatterns = useSpecificPatterns;
+      fuzzer.handleHeightLimitSpecially = handleHeightLimitSpecially;
 
       final long timeBefore = System.currentTimeMillis();
 
