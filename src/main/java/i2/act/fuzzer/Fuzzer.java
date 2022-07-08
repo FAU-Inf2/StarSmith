@@ -217,8 +217,11 @@ public class Fuzzer {
 
       if (printDuration) {
         final long endTime = System.currentTimeMillis();
-        System.err.format("[i] program generation took %d ms (and %d alternatives)\n",
-            endTime - startTime, numberOfAlternatives);
+
+        final long size = rootNode.size();
+
+        System.err.format("[i] program generation took %d ms (%d alternatives, %d nodes)\n",
+            endTime - startTime, numberOfAlternatives, size);
       }
 
       return true;
@@ -285,6 +288,8 @@ public class Fuzzer {
 
     boolean childFailedDueToHeightLimit = false;
 
+    boolean firstRound = true;
+
     enumerateAlternatives: do {
       // check if timeout occurred
       {
@@ -296,7 +301,11 @@ public class Fuzzer {
         }
       }
 
-      ++numberOfAlternatives;
+      if (firstRound) {
+        firstRound = false;
+      } else {
+        ++numberOfAlternatives;
+      }
 
       evaluateAttributes(rootNode, true);
 
@@ -397,6 +406,10 @@ public class Fuzzer {
       }
     } while ((maxAlternatives == -1 || numberOfAlternatives < maxAlternatives)
         && chooseAlternative(rootNode, rootNode.getFailPatterns(), maxRecursionDepth, debugDepth));
+
+    if (maxAlternatives == -1 || numberOfAlternatives < maxAlternatives) {
+      ++numberOfAlternatives; // last call of chooseAlternative() that failed
+    }
 
     // alternatives exhausted -> fuzzing failed
     final boolean failedDueToHeightLimit =
